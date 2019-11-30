@@ -3,8 +3,14 @@
 #include <omp.h>
 #include <time.h>
 #include <string.h> 
+#include <omp.h>
 
-#define FILESIZE 80000000
+
+#define ARRAY_SIZE 8     //Size of arrays whose elements will be added together.
+#define NUM_THREADS 32    //Number of threads to use for vector addition.
+
+
+#define FILESIZE 60000000
 #define AMT_OF_FILES 1
 #define VSIZE FILESIZE*AMT_OF_FILES
 #define TESTSIZE 10
@@ -37,7 +43,7 @@ int main(int argc, char* argv[]){
     Y =  (int *) calloc (vsize,sizeof(int));
     Z =  (int *) calloc (vsize,sizeof(int));
     //results = (int *) malloc (testsize*sizeof(int));
-    
+    printf("Maximum # of Threads: %d\n", omp_get_max_threads());
     readAllFiles(X, Y, Z, amountOfFiles); 
     runProgram(X, Y, Z);
 
@@ -76,27 +82,43 @@ void runProgram(int* arr1, int* arr2, int* arr3){
 }
 
 void performTest(int testsize, int* arr1, int* arr2, int* arr3){
-    clock_t begin = clock();
+    int n = testsize;                 // number of array elements
+	int n_per_thread;                   // elements per thread
+	int total_threads = NUM_THREADS;    // number of threads to use
+    int i;  
+    omp_set_num_threads(total_threads);
+    n_per_thread = n/total_threads;
+
+    //clock_t begin = clock();
+    double st = omp_get_wtime();
+
     int X_SUMMATION = 0;
     int Y_SUMMATION = 0;
     int Z_SUMMATION = 0;
 
+    #pragma omp parallel default(none) shared(testsize, X_SUMMATION, Y_SUMMATION, Z_SUMMATION, arr1, arr2, arr3)
+    {
+    #pragma omp for reduction(+: X_SUMMATION) schedule(auto)
     for(int i = 0; i < testsize; i++){
         X_SUMMATION = X_SUMMATION + arr1[i];
     }
-
+    
+    #pragma omp for reduction(+: Y_SUMMATION) schedule(auto)
     for(int i = 0; i < testsize; i++){
         Y_SUMMATION = Y_SUMMATION + arr2[i];
     }
 
+    #pragma omp for reduction(+: Z_SUMMATION) schedule(auto)
     for(int i = 0; i < testsize; i++){
         Z_SUMMATION = Z_SUMMATION + arr3[i];
     }
+    }
     printf("Summation of X components: %d\nSummation of Y components: %d\nSummation of Z components: %d\n", X_SUMMATION, Y_SUMMATION, Z_SUMMATION);
-    clock_t end = clock();
-    double time_spent = (double)(end - begin) / CLOCKS_PER_SEC;
+    //clock_t end = clock();
+    //double time_spent = (double)(end - begin) / CLOCKS_PER_SEC;
+    double runtime = omp_get_wtime() - st;
     printf("\n");
-    printf("Execution time in seconds: %f\n", time_spent);
+    printf("Execution time in seconds: %f\n", runtime);
 }
 
 void readAllFiles(int* arr1, int* arr2, int* arr3, int numOfValues){
@@ -134,7 +156,6 @@ void createAllFiles(int numOfValues, int upper, int lower){
         createFile(concat(concat("y", fileNumber),".txt"), FILESIZE, upper, lower);
         printf("Creating file: %s\n", concat(concat("z", fileNumber),".txt"));
         createFile(concat(concat("z", fileNumber),".txt"), FILESIZE, upper, lower);
-
     }
     free(fileNumber);
 }
