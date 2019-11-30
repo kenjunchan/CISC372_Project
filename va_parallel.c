@@ -7,7 +7,7 @@
 
 
 #define ARRAY_SIZE 8     //Size of arrays whose elements will be added together.
-#define NUM_THREADS 32    //Number of threads to use for vector addition.
+#define NUM_THREADS 16    //Number of threads to use for vector addition.
 
 
 #define FILESIZE 60000000
