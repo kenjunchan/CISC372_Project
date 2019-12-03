@@ -3,11 +3,8 @@
 #include <omp.h>
 #include <time.h>
 #include <string.h> 
-#include <omp.h>
 
-
-#define ARRAY_SIZE 8     //Size of arrays whose elements will be added together.
-#define NUM_THREADS 16    //Number of threads to use for vector addition.
+#define NUM_THREADS 64    //Number of threads to use for vector addition.
 
 
 #define FILESIZE 60000000
@@ -33,25 +30,31 @@ int main(int argc, char* argv[]){
     int lower = LOWER;
     int upper = UPPER;
     srand(time(0));
-    //createAllFiles(AMT_OF_FILES, UPPER, LOWER); //COMMENT THIS LINE OUT IF YOU ARE NOT CREATING THE X,Y,Z COMPONENT FILES, USUALLY THIS MEANS ALWAYS KEEP THIS COMMENTED
+    createAllFiles(AMT_OF_FILES, UPPER, LOWER); //COMMENT THIS LINE OUT IF YOU ARE NOT CREATING THE X,Y,Z COMPONENT FILES, USUALLY THIS MEANS ALWAYS KEEP THIS COMMENTED
 
     int myid, size;
     int i;
     int *X, *Y, *Z;
-    int *results;
     X =  (int *) calloc (vsize,sizeof(int));
     Y =  (int *) calloc (vsize,sizeof(int));
     Z =  (int *) calloc (vsize,sizeof(int));
-    //results = (int *) malloc (testsize*sizeof(int));
-    printf("Maximum # of Threads: %d\n", omp_get_max_threads());
-    readAllFiles(X, Y, Z, amountOfFiles); 
-    runProgram(X, Y, Z);
 
+    printf("Maximum # of Threads: %d\n", omp_get_max_threads());
+    
+    readAllFiles(X, Y, Z, amountOfFiles); 
+
+    performTest(1000000,X,Y,Z);
+    performTest(5000000,X,Y,Z);
+    performTest(10000000,X,Y,Z);
+    performTest(20000000,X,Y,Z);
+    performTest(30000000,X,Y,Z);
+    performTest(40000000,X,Y,Z);
+    performTest(50000000,X,Y,Z);
+    performTest(60000000,X,Y,Z);
 
     free(X);
     free(Y);
     free(Z);
-    //free(results);
 
     return 0;
 }
@@ -89,7 +92,7 @@ void performTest(int testsize, int* arr1, int* arr2, int* arr3){
     omp_set_num_threads(total_threads);
     n_per_thread = n/total_threads;
 
-    //clock_t begin = clock();
+    printf("Beginning Vector Addition - Parallel, for %d vectors...\n", testsize);
     double st = omp_get_wtime();
 
     int X_SUMMATION = 0;
@@ -114,8 +117,6 @@ void performTest(int testsize, int* arr1, int* arr2, int* arr3){
     }
     }
     printf("Summation of X components: %d\nSummation of Y components: %d\nSummation of Z components: %d\n", X_SUMMATION, Y_SUMMATION, Z_SUMMATION);
-    //clock_t end = clock();
-    //double time_spent = (double)(end - begin) / CLOCKS_PER_SEC;
     double runtime = omp_get_wtime() - st;
     printf("\n");
     printf("Execution time in seconds: %f\n", runtime);
